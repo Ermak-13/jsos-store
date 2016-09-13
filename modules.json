@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Clock",
+    "githubUrl": "https://github.com/Ermak-13/jsos-clock",
+    "version": "1.0.0",
+    "main": "module.js"
+  },
+  {
+    "name": "Calendar",
+    "githubUrl": "https://github.com/Ermak-13/jsos-calendar",
+    "version": "1.0.0",
+    "main": "module.js"
+  },
+  {
+    "name": "Sticker",
+    "githubUrl": "https://github.com/Ermak-13/jsos-sticker",
+    "version": "1.0.0",
+    "main": "module.js"
+  },
+  {
+    "name": "Timer",
+    "githubUrl": "https://github.com/Ermak-13/jsos-timer",
+    "version": "1.0.1",
+    "main": "module.js"
+  },
+  {
+    "name": "Webopener",
+    "githubUrl": "https://github.com/Ermak-13/jsos-webopener",
+    "version": "1.0.2",
+    "main": "module.js"
+  }
+]
