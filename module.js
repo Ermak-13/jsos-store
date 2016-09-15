@@ -2,28 +2,96 @@
 var Widget = require('./widget'),
     Shortcut = require('./shortcut');
 
-OS.installModule('TODO', {
+OS.installModule('JSOS Store', {
   Widget: Widget,
   Shortcut: Shortcut
 });
 
 
-},{"./shortcut":3,"./widget":4}],2:[function(require,module,exports){
-(function (global){
-var settings = {
-  DEFAULT_SIZE: {
-    width: '150px',
-    height: '100px'
+},{"./shortcut":4,"./widget":5}],2:[function(require,module,exports){
+var ModulesTab = React.createClass({displayName: "ModulesTab",
+  handleInstall: function (module, i, e) {
+    e.preventDefault();
+
+    this.props.onInstall(module, i);
   },
 
-  DEFAULT_POSITION: global.Settings.get('default_position')
+  handleRemove: function (module, i, e) {
+    e.preventDefault();
+
+    this.props.onRemove(module, i);
+  },
+
+  render: function() {
+    return (
+      React.createElement("table", {className: "table"}, 
+        React.createElement("tbody", null, 
+           this.getModulesHTML() 
+        )
+      )
+    );
+  },
+
+  getModulesHTML: function () {
+    return _.map(this.props.modules, function (module, i) {
+      return this.getModuleTrHTML(module, i);
+    }.bind(this));
+  },
+
+  getModuleTrHTML: function (module, i) {
+    return (
+      React.createElement("tr", {key:  i }, 
+        React.createElement("td", null,  module.githubUrl), 
+
+        React.createElement("td", null, 
+           this.getModuleBtn(module, i) 
+        )
+      )
+    );
+  },
+
+  getModuleBtn: function (module, i) {
+    if (module.istalled) {
+      return (
+        React.createElement("a", {href: "#", className: "btn btn-danger btn-xs", 
+          onClick:  this.handleRemove.bind(this, module, i) }, 
+          React.createElement("span", {className: "fa fa-remove"})
+        )
+      );
+    }else {
+      return (
+        React.createElement("a", {href: "#", className: "btn btn-success btn-xs", 
+          onClick:  this.handleInstall.bind(this, module, i) }, 
+          React.createElement("span", {className: "fa fa-check"})
+        )
+      );
+    }
+  }
+});
+
+module.exports = ModulesTab;
+
+
+},{}],3:[function(require,module,exports){
+(function (global){
+var settings = {
+  CACHE_TIMEOUT: 14 * 24 * 60 * 60,
+
+  DEFAULT_SIZE: {
+    width: '520px',
+    height: '300px'
+  },
+
+  DEFAULT_POSITION: global.Settings.get('default_position'),
+
+  MODULES_REPOSITORY_URL: 'https://rawgit.com/Ermak-13/jsos-store/master/modules.json'
 };
 
 module.exports = settings;
 
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var Link = OS.Link;
 
 var Shortcut = React.createClass({displayName: "Shortcut",
@@ -33,7 +101,7 @@ var Shortcut = React.createClass({displayName: "Shortcut",
         className:  this.props.className, 
         onClick:  this.props.onClick}, 
 
-        React.createElement("span", {className: "fa fa-spinner"})
+        React.createElement("span", {className: "fa fa-shopping-cart"})
       )
     );
   }
@@ -42,12 +110,23 @@ var Shortcut = React.createClass({displayName: "Shortcut",
 module.exports = Shortcut;
 
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
+(function (global){
 var Mixins = OS.Mixins,
     Widget = OS.Widget,
     Configurator = OS.Configurator;
 
-var settings = require('./settings');
+var settings = require('./settings'),
+    ModulesTab = require('./modules_tab');
+
+global.githubUrl = function () {
+  var hostname = arguments[0].replace('github.com', 'cdn.rawgit.com'),
+      array = Array.prototype.slice.call(arguments, 1);
+
+  return _.reduce(array, function (result, part) {
+    return result + '/' + part;
+  }, hostname);
+};
 
 var _Widget = React.createClass({displayName: "_Widget",
   mixins: [Mixins.WidgetHelper],
@@ -55,7 +134,24 @@ var _Widget = React.createClass({displayName: "_Widget",
   getInitialState: function () {
     return {
       size: settings.DEFAULT_SIZE,
-      position: settings.DEFAULT_POSITION
+      position: settings.DEFAULT_POSITION,
+
+      lastModulesUpdatedAt: null,
+      modules: [],
+      themes: []
+    };
+  },
+
+  handleInstallModule: function (module) {
+  },
+
+  handleRemoveModule: function (module) {
+  },
+
+  _getData: function () {
+    return {
+      modules: this.state.modules,
+      lastModulesUpdatedAt: this.getLastModulesUpdatedAt()
     };
   },
 
@@ -66,21 +162,75 @@ var _Widget = React.createClass({displayName: "_Widget",
     };
   },
 
+  isActualModules: function () {
+      return (
+        moment().unix() - this.getLastModulesUpdatedAt() <
+        settings.CACHE_TIMEOUT
+      );
+  },
+
+  getLastModulesUpdatedAt: function () {
+    if (this.state.lastModulesUpdatedAt) {
+      return this.state.lastModulesUpdatedAt;
+    } else {
+      return 0;
+    }
+  },
+
+  updateModules: function (data) {
+    var sModules = _.clone(data),
+        lModules = _.clone(this.state.modules);
+
+    _.each(sModules, function (sModule) {
+      var index = _.findIndex(lModules, function (lModule) {
+        return (
+          sModule.githubUrl === lModule.githubUrl &&
+          sModule.name === lModule.name
+        );
+      });
+
+      if (index !== -1) {
+        var status = lModule[index].status;
+        sModule.status = status;
+      } else {
+        sModule.status = 'uninstalled';
+      }
+    });
+
+    this.setState({
+      modules: sModules,
+      lastModulesUpdatedAt: moment().unix()
+    }, this.saveData);
+  },
+
   componentWillMount: function () {
-    this.init();
+    this.init(function () {
+      if (!this.isActualModules) {
+        OS.download(settings.MODULES_REPOSITORY_URL, {
+          success: function (text) {
+            this.updateModules(JSON.parse(text));
+          }.bind(this)
+        });
+      }
+    }.bind(this));
   },
 
   render: function () {
     return (
       React.createElement(Widget.Widget, {widgetStyles:  this.getWidgetStyles() }, 
-        React.createElement(Widget.DefaultIconsContainer, {
+        React.createElement(Widget.DefaultHeader, {
+          title: "JSOS Store", 
           onMouseDownPositionBtn:  this.handleStartMoving, 
           onClickCloseBtn:  this.close, 
           onClickConfigureBtn:  this.openConfigurator}
         ), 
 
         React.createElement(Widget.Body, null, 
-          React.createElement("p", {className: "lead"}, "TODO")
+          React.createElement(ModulesTab, {
+            modules:  this.state.modules, 
+            onInstall:  this.handleInstallModule, 
+            onRemove:  this.handleRemoveModule}
+          )
         )
       )
     );
@@ -90,4 +240,5 @@ var _Widget = React.createClass({displayName: "_Widget",
 module.exports = _Widget;
 
 
-},{"./settings":2}]},{},[1])
+}).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./modules_tab":2,"./settings":3}]},{},[1])
