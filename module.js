@@ -9,6 +9,9 @@ OS.installModule('JSOS Store', {
 
 
 },{"./shortcut":4,"./widget":5}],2:[function(require,module,exports){
+var INSTALLED_STATUS = 'installed',
+    UNINSTALLED_STATUS = 'uninstalled';
+
 var ModulesTab = React.createClass({displayName: "ModulesTab",
   handleInstall: function (module, i, e) {
     e.preventDefault();
@@ -51,7 +54,7 @@ var ModulesTab = React.createClass({displayName: "ModulesTab",
   },
 
   getModuleBtn: function (module, i) {
-    if (module.istalled) {
+    if (module.status === INSTALLED_STATUS) {
       return (
         React.createElement("a", {href: "#", className: "btn btn-danger btn-xs", 
           onClick:  this.handleRemove.bind(this, module, i) }, 
@@ -111,7 +114,6 @@ module.exports = Shortcut;
 
 
 },{}],5:[function(require,module,exports){
-(function (global){
 var Mixins = OS.Mixins,
     Widget = OS.Widget,
     Configurator = OS.Configurator;
@@ -119,14 +121,8 @@ var Mixins = OS.Mixins,
 var settings = require('./settings'),
     ModulesTab = require('./modules_tab');
 
-global.githubUrl = function () {
-  var hostname = arguments[0].replace('github.com', 'cdn.rawgit.com'),
-      array = Array.prototype.slice.call(arguments, 1);
-
-  return _.reduce(array, function (result, part) {
-    return result + '/' + part;
-  }, hostname);
-};
+var INSTALLED_STATUS = 'installed',
+    UNINSTALLED_STATUS = 'uninstalled';
 
 var _Widget = React.createClass({displayName: "_Widget",
   mixins: [Mixins.WidgetHelper],
@@ -142,10 +138,26 @@ var _Widget = React.createClass({displayName: "_Widget",
     };
   },
 
-  handleInstallModule: function (module) {
+  handleInstallModule: function (module, i) {
+    var url = this.getInstallUrl(module.githubUrl, module.version, module.main);
+
+    OS.installScript(url);
+    var modules = this.state.modules;
+    modules[i].status = INSTALLED_STATUS;
+
+    this.setState({ modules: modules }, this.saveData);
   },
 
-  handleRemoveModule: function (module) {
+  handleRemoveModule: function (module, i) {
+    var script = _.find(Scripts.all(), function (script) {
+      return script.url === this.getInstallUrl(module.githubUrl, module.version, module.main);
+    }.bind(this));
+
+    OS.uninstallScript(script);
+    var modules = this.state.modules;
+    modules[i].status = UNINSTALLED_STATUS;
+
+    this.setState({ modules: modules }, this.saveData);
   },
 
   _getData: function () {
@@ -177,6 +189,15 @@ var _Widget = React.createClass({displayName: "_Widget",
     }
   },
 
+  getInstallUrl: function () {
+    var hostname = arguments[0].replace('github.com', 'cdn.rawgit.com'),
+        array = Array.prototype.slice.call(arguments, 1);
+
+    return _.reduce(array, function (result, part) {
+      return result + '/' + part;
+    }, hostname);
+  },
+
   updateModules: function (data) {
     var sModules = _.clone(data),
         lModules = _.clone(this.state.modules);
@@ -193,7 +214,7 @@ var _Widget = React.createClass({displayName: "_Widget",
         var status = lModule[index].status;
         sModule.status = status;
       } else {
-        sModule.status = 'uninstalled';
+        sModule.status = UNINSTALLED_STATUS;
       }
     });
 
@@ -205,6 +226,7 @@ var _Widget = React.createClass({displayName: "_Widget",
 
   componentWillMount: function () {
     this.init(function () {
+      console.log(this.getData());
       if (!this.isActualModules) {
         OS.download(settings.MODULES_REPOSITORY_URL, {
           success: function (text) {
@@ -240,5 +262,4 @@ var _Widget = React.createClass({displayName: "_Widget",
 module.exports = _Widget;
 
 
-}).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./modules_tab":2,"./settings":3}]},{},[1])

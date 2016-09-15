@@ -1,3 +1,6 @@
+var INSTALLED_STATUS = 'installed',
+    UNINSTALLED_STATUS = 'uninstalled';
+
 var ModulesTab = React.createClass({
   handleInstall: function (module, i, e) {
     e.preventDefault();
@@ -40,7 +43,7 @@ var ModulesTab = React.createClass({
   },
 
   getModuleBtn: function (module, i) {
-    if (module.istalled) {
+    if (module.status === INSTALLED_STATUS) {
       return (
         <a href="#" className="btn btn-danger btn-xs"
           onClick={ this.handleRemove.bind(this, module, i) }>
