@@ -3,7 +3,7 @@ var Mixins = OS.Mixins,
     Configurator = OS.Configurator;
 
 var settings = require('./settings'),
-    ModulesTab = require('./modules_tab');
+    Container = require('./container');
 
 var INSTALLED_STATUS = 'installed',
     UNINSTALLED_STATUS = 'uninstalled';
@@ -132,8 +132,8 @@ var _Widget = React.createClass({
         />
 
         <Widget.Body>
-          <ModulesTab
-            modules={ this.state.modules }
+          <Container
+            collection={ this.state.modules }
             onInstall={ this.handleInstallModule }
             onRemove={ this.handleRemoveModule }
           />

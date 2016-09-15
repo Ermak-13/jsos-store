@@ -1,4 +1,71 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var INSTALLED_STATUS = 'installed',
+    UNINSTALLED_STATUS = 'uninstalled';
+
+var Container = React.createClass({displayName: "Container",
+  handleInstall: function (element, i, e) {
+    e.preventDefault();
+
+    this.props.onInstall(element, i);
+  },
+
+  handleRemove: function (element, i, e) {
+    e.preventDefault();
+
+    this.props.onRemove(element, i);
+  },
+
+  render: function() {
+    return (
+      React.createElement("table", {className: "table"}, 
+        React.createElement("tbody", null, 
+           this.getCollectionHTML() 
+        )
+      )
+    );
+  },
+
+  getCollectionHTML: function () {
+    return _.map(this.props.collection, function (element, i) {
+      return this.getElementTrHTML(element, i);
+    }.bind(this));
+  },
+
+  getElementTrHTML: function (element, i) {
+    return (
+      React.createElement("tr", {key:  i }, 
+        React.createElement("td", null,  element.githubUrl), 
+
+        React.createElement("td", null, 
+           this.getElementBtn(element, i) 
+        )
+      )
+    );
+  },
+
+  getElementBtn: function (element, i) {
+    if (element.status === INSTALLED_STATUS) {
+      return (
+        React.createElement("a", {href: "#", className: "btn btn-danger btn-xs", 
+          onClick:  this.handleRemove.bind(this, element, i) }, 
+          React.createElement("span", {className: "fa fa-remove"})
+        )
+      );
+    }else {
+      return (
+        React.createElement("a", {href: "#", className: "btn btn-success btn-xs", 
+          onClick:  this.handleInstall.bind(this, element, i) }, 
+          React.createElement("span", {className: "fa fa-check"})
+        )
+      );
+    }
+  }
+});
+
+module.exports = Container;
+
+
+},{}],2:[function(require,module,exports){
 var Widget = require('./widget'),
     Shortcut = require('./shortcut');
 
@@ -8,74 +75,7 @@ OS.installModule('JSOS Store', {
 });
 
 
-},{"./shortcut":4,"./widget":5}],2:[function(require,module,exports){
-var INSTALLED_STATUS = 'installed',
-    UNINSTALLED_STATUS = 'uninstalled';
-
-var ModulesTab = React.createClass({displayName: "ModulesTab",
-  handleInstall: function (module, i, e) {
-    e.preventDefault();
-
-    this.props.onInstall(module, i);
-  },
-
-  handleRemove: function (module, i, e) {
-    e.preventDefault();
-
-    this.props.onRemove(module, i);
-  },
-
-  render: function() {
-    return (
-      React.createElement("table", {className: "table"}, 
-        React.createElement("tbody", null, 
-           this.getModulesHTML() 
-        )
-      )
-    );
-  },
-
-  getModulesHTML: function () {
-    return _.map(this.props.modules, function (module, i) {
-      return this.getModuleTrHTML(module, i);
-    }.bind(this));
-  },
-
-  getModuleTrHTML: function (module, i) {
-    return (
-      React.createElement("tr", {key:  i }, 
-        React.createElement("td", null,  module.githubUrl), 
-
-        React.createElement("td", null, 
-           this.getModuleBtn(module, i) 
-        )
-      )
-    );
-  },
-
-  getModuleBtn: function (module, i) {
-    if (module.status === INSTALLED_STATUS) {
-      return (
-        React.createElement("a", {href: "#", className: "btn btn-danger btn-xs", 
-          onClick:  this.handleRemove.bind(this, module, i) }, 
-          React.createElement("span", {className: "fa fa-remove"})
-        )
-      );
-    }else {
-      return (
-        React.createElement("a", {href: "#", className: "btn btn-success btn-xs", 
-          onClick:  this.handleInstall.bind(this, module, i) }, 
-          React.createElement("span", {className: "fa fa-check"})
-        )
-      );
-    }
-  }
-});
-
-module.exports = ModulesTab;
-
-
-},{}],3:[function(require,module,exports){
+},{"./shortcut":4,"./widget":5}],3:[function(require,module,exports){
 (function (global){
 var settings = {
   CACHE_TIMEOUT: 14 * 24 * 60 * 60,
@@ -119,7 +119,7 @@ var Mixins = OS.Mixins,
     Configurator = OS.Configurator;
 
 var settings = require('./settings'),
-    ModulesTab = require('./modules_tab');
+    Container = require('./container');
 
 var INSTALLED_STATUS = 'installed',
     UNINSTALLED_STATUS = 'uninstalled';
@@ -248,8 +248,8 @@ var _Widget = React.createClass({displayName: "_Widget",
         ), 
 
         React.createElement(Widget.Body, null, 
-          React.createElement(ModulesTab, {
-            modules:  this.state.modules, 
+          React.createElement(Container, {
+            collection:  this.state.modules, 
             onInstall:  this.handleInstallModule, 
             onRemove:  this.handleRemoveModule}
           )
@@ -262,4 +262,4 @@ var _Widget = React.createClass({displayName: "_Widget",
 module.exports = _Widget;
 
 
-},{"./modules_tab":2,"./settings":3}]},{},[1])
+},{"./container":1,"./settings":3}]},{},[2])
