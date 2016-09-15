@@ -3,10 +3,10 @@ var Mixins = OS.Mixins,
     Configurator = OS.Configurator;
 
 var settings = require('./settings'),
-    Container = require('./container');
+    Container = require('./container'),
 
-var INSTALLED_STATUS = 'installed',
-    UNINSTALLED_STATUS = 'uninstalled';
+    INSTALLED_STATUS = require('./constants').INSTALLED_STATUS,
+    UNINSTALLED_STATUS = require('./constants').UNINSTALLED_STATUS;
 
 var _Widget = React.createClass({
   mixins: [Mixins.WidgetHelper],

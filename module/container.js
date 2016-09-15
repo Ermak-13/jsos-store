@@ -1,5 +1,5 @@
-var INSTALLED_STATUS = 'installed',
-    UNINSTALLED_STATUS = 'uninstalled';
+var INSTALLED_STATUS = require('./constants').INSTALLED_STATUS,
+    UNINSTALLED_STATUS = require('./constants').UNINSTALLED_STATUS;
 
 var Container = React.createClass({
   handleInstall: function (element, i, e) {
