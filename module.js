@@ -75,15 +75,42 @@ module.exports = Container;
 
 },{"./constants":1}],3:[function(require,module,exports){
 var Widget = require('./widget'),
-    Shortcut = require('./shortcut');
+    Shortcut = require('./shortcut'),
+    locales = require('./locales');
 
+I18n.registryDict(locales);
 OS.installModule('JSOS Store', {
   Widget: Widget,
   Shortcut: Shortcut
 });
 
 
-},{"./shortcut":5,"./widget":6}],4:[function(require,module,exports){
+},{"./locales":5,"./shortcut":8,"./widget":9}],4:[function(require,module,exports){
+var en = {
+  'jsos_store.modules.nav_text': 'Modules',
+  'jsos_store.themes.nav_text': 'Themes'
+};
+
+module.exports = en;
+
+
+},{}],5:[function(require,module,exports){
+module.exports = {
+  en: require('./en'),
+  ru: require('./ru')
+};
+
+
+},{"./en":4,"./ru":6}],6:[function(require,module,exports){
+var ru = {
+  'jsos_store.modules.nav_text': 'Модули',
+  'jsos_store.themes.nav_text': 'Темы'
+};
+
+module.exports = ru;
+
+
+},{}],7:[function(require,module,exports){
 (function (global){
 var settings = {
   CACHE_TIMEOUT: 14 * 24 * 60 * 60,
@@ -103,7 +130,7 @@ module.exports = settings;
 
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],5:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 var Link = OS.Link;
 
 var Shortcut = React.createClass({displayName: "Shortcut",
@@ -122,7 +149,7 @@ var Shortcut = React.createClass({displayName: "Shortcut",
 module.exports = Shortcut;
 
 
-},{}],6:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var Mixins = OS.Mixins,
     Widget = OS.Widget,
     Configurator = OS.Configurator;
@@ -229,12 +256,12 @@ var _Widget = React.createClass({displayName: "_Widget",
 
     return {
       modules: {
-        navText: 'Modules',
+        navText: I18n.t('jsos_store.modules.nav_text'),
         content: modulesContent
       },
 
       themes: {
-        navText: 'Themes',
+        navText: I18n.t('jsos_store.themes.nav_text'),
         content: themesContent
       }
     };
@@ -357,4 +384,4 @@ var _Widget = React.createClass({displayName: "_Widget",
 module.exports = _Widget;
 
 
-},{"./constants":1,"./container":2,"./settings":4}]},{},[3])
+},{"./constants":1,"./container":2,"./settings":7}]},{},[3])
