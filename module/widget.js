@@ -47,10 +47,35 @@ var _Widget = React.createClass({
     this.setState({ modules: modules }, this.saveData);
   },
 
+  handleInstallTheme: function (theme, i) {
+    var url = this.getInstallUrl(theme.githubUrl, theme.version, theme.main);
+
+    OS.installStyle(url);
+    var themes = this.state.themes;
+    themes[i].status = INSTALLED_STATUS;
+
+    this.setState({ themes: themes }, this.saveData);
+  },
+
+  handleRemoveTheme: function (theme, i) {
+    var style = _.find(Styles.all(), function (style) {
+      return style.url === this.getInstallUrl(theme.githubUrl, theme.version, theme.main);
+    }.bind(this));
+
+    OS.uninstallStyle(style);
+    var themes = this.state.themes;
+    themes[i].status = UNINSTALLED_STATUS;
+
+    this.setState({ themes: themes }, this.saveData);
+  },
+
   _getData: function () {
     return {
       modules: this.state.modules,
-      lastModulesUpdatedAt: this.getLastUpdatedAt(this.state.lastModulesUpdatedAt)
+      lastModulesUpdatedAt: this.getLastUpdatedAt(this.state.lastModulesUpdatedAt),
+
+      themes: this.state.themes,
+      lastThemesUpdatedAt: this.getLastUpdatedAt(this.state.lastThemesUpdatedAt)
     };
   },
 
@@ -155,6 +180,11 @@ var _Widget = React.createClass({
         sTheme.status = UNINSTALLED_STATUS;
       }
     });
+
+    this.setState({
+      themes: sThemes,
+      lastThemesUpdatedAt: moment().unix()
+    }, this.saveData);
   },
 
   componentWillMount: function () {
