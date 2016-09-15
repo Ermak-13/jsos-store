@@ -1,18 +1,10 @@
-# JSOS Module
+# JSOS Store
 
-**This repository was creating for helping develop new "JSOS module".**
+JSOS Store is module of [JSOS](https://github.com/Ermak-13/jsos) project
+and it store JSOS modules, themes & etc.
 
-JSOS module is brick of [JSOS](https://github.com/Ermak-13/jsos).
-And it like as application of normal operation system.
-
-## How is developing new module?
-* Fork this repository
-* Rename repository
-* Edit README.md
-* `npm install`
-* `gulp` and `gulp server`
-* Implementing ... (directory "/module")
-* Please, add project link to [JSOS Store](https://github.com/Ermak-13/jsos-store) modules.txt
+* JSOS Module - https://github.com/Ermak-13/jsos-module
+* JSOS Theme - https://github.com/Ermak-13/jsos-theme
 
 ## Gulp Commands
 * `gulp default` - gulp dev

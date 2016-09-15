@@ -104,12 +104,12 @@ var _Widget = React.createClass({
 
     return {
       modules: {
-        navText: 'Modules',
+        navText: I18n.t('jsos_store.modules.nav_text'),
         content: modulesContent
       },
 
       themes: {
-        navText: 'Themes',
+        navText: I18n.t('jsos_store.themes.nav_text'),
         content: themesContent
       }
     };
