@@ -7,8 +7,8 @@ module.exports = {
 
 
 },{}],2:[function(require,module,exports){
-var INSTALLED_STATUS = 'installed',
-    UNINSTALLED_STATUS = 'uninstalled';
+var INSTALLED_STATUS = require('./constants').INSTALLED_STATUS,
+    UNINSTALLED_STATUS = require('./constants').UNINSTALLED_STATUS;
 
 var Container = React.createClass({displayName: "Container",
   handleInstall: function (element, i, e) {
@@ -73,7 +73,7 @@ var Container = React.createClass({displayName: "Container",
 module.exports = Container;
 
 
-},{}],3:[function(require,module,exports){
+},{"./constants":1}],3:[function(require,module,exports){
 var Widget = require('./widget'),
     Shortcut = require('./shortcut');
 
@@ -95,7 +95,8 @@ var settings = {
 
   DEFAULT_POSITION: global.Settings.get('default_position'),
 
-  MODULES_REPOSITORY_URL: 'https://rawgit.com/Ermak-13/jsos-store/master/modules.json'
+  MODULES_REPOSITORY_URL: 'https://rawgit.com/Ermak-13/jsos-store/master/modules.json',
+  THEMES_REPOSITORY_URL: 'https://rawgit.com/Ermak-13/jsos-store/master/themes.json'
 };
 
 module.exports = settings;
@@ -133,15 +134,18 @@ var settings = require('./settings'),
     UNINSTALLED_STATUS = require('./constants').UNINSTALLED_STATUS;
 
 var _Widget = React.createClass({displayName: "_Widget",
-  mixins: [Mixins.WidgetHelper],
+  mixins: [Mixins.WidgetHelper, Mixins.NavHelper],
 
   getInitialState: function () {
     return {
+      tab: 'modules',
       size: settings.DEFAULT_SIZE,
       position: settings.DEFAULT_POSITION,
 
       lastModulesUpdatedAt: null,
       modules: [],
+
+      lastThemesUpdatedAt: null,
       themes: []
     };
   },
@@ -171,7 +175,7 @@ var _Widget = React.createClass({displayName: "_Widget",
   _getData: function () {
     return {
       modules: this.state.modules,
-      lastModulesUpdatedAt: this.getLastModulesUpdatedAt()
+      lastModulesUpdatedAt: this.getLastUpdatedAt(this.state.lastModulesUpdatedAt)
     };
   },
 
@@ -182,19 +186,44 @@ var _Widget = React.createClass({displayName: "_Widget",
     };
   },
 
-  isActualModules: function () {
-      return (
-        moment().unix() - this.getLastModulesUpdatedAt() <
-        settings.CACHE_TIMEOUT
-      );
+  getTabs: function () {
+    var modulesContent = (
+          React.createElement(Container, {
+            collection:  this.state.modules, 
+            onInstall:  this.handleInstallModule, 
+            onRemove:  this.handleRemoveModule}
+          )
+        ),
+        themesContent = (
+          React.createElement(Container, {
+            collection:  this.state.themes, 
+            onInstall:  this.handleInstallTheme, 
+            onRemove:  this.handleRemoveTheme}
+          )
+        );
+
+    return {
+      modules: {
+        navText: 'Modules',
+        content: modulesContent
+      },
+
+      themes: {
+        navText: 'Themes',
+        content: themesContent
+      }
+    };
   },
 
-  getLastModulesUpdatedAt: function () {
-    if (this.state.lastModulesUpdatedAt) {
-      return this.state.lastModulesUpdatedAt;
-    } else {
-      return 0;
-    }
+  isActual: function (field) {
+    return (
+      moment().unix() - this.getLastUpdatedAt(field) <
+      settings.CACHE_TIMEOUT
+    );
+  },
+
+  getLastUpdatedAt: function (value) {
+    return value ? value : 0;
   },
 
   getInstallUrl: function () {
@@ -219,7 +248,7 @@ var _Widget = React.createClass({displayName: "_Widget",
       });
 
       if (index !== -1) {
-        var status = lModule[index].status;
+        var status = lModules[index].status;
         sModule.status = status;
       } else {
         sModule.status = UNINSTALLED_STATUS;
@@ -232,13 +261,41 @@ var _Widget = React.createClass({displayName: "_Widget",
     }, this.saveData);
   },
 
+  updateThemes: function (data) {
+    var sThemes = _.clone(data),
+        lThemes = _.clone(this.state.themes);
+
+    _.each(sThemes, function (sTheme) {
+      var index = _.findIndex(lThemes, function (lTheme) {
+        return (
+          sTheme.githubUrl === lTheme.githubUrl &&
+          sTheme.name === lTheme.name
+        );
+      });
+
+      if (index !== -1) {
+        var status = lThemes[index].status;
+        sTheme.status = status;
+      } else {
+        sTheme.status = UNINSTALLED_STATUS;
+      }
+    });
+  },
+
   componentWillMount: function () {
     this.init(function () {
-      console.log(this.getData());
-      if (!this.isActualModules) {
+      if (!this.isActual(this.state.lastModulesUpdatedAt)) {
         OS.download(settings.MODULES_REPOSITORY_URL, {
           success: function (text) {
             this.updateModules(JSON.parse(text));
+          }.bind(this)
+        });
+      }
+
+      if (!this.isActual(this.state.lastThemesUpdatedAt)) {
+        OS.download(settings.THEMES_REPOSITORY_URL, {
+          success: function (text) {
+            this.updateThemes(JSON.parse(text));
           }.bind(this)
         });
       }
@@ -256,10 +313,10 @@ var _Widget = React.createClass({displayName: "_Widget",
         ), 
 
         React.createElement(Widget.Body, null, 
-          React.createElement(Container, {
-            collection:  this.state.modules, 
-            onInstall:  this.handleInstallModule, 
-            onRemove:  this.handleRemoveModule}
+           this.getNavHTML(), 
+
+          React.createElement("div", null, 
+             this.getContentHTML() 
           )
         )
       )

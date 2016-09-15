@@ -9,15 +9,18 @@ var settings = require('./settings'),
     UNINSTALLED_STATUS = require('./constants').UNINSTALLED_STATUS;
 
 var _Widget = React.createClass({
-  mixins: [Mixins.WidgetHelper],
+  mixins: [Mixins.WidgetHelper, Mixins.NavHelper],
 
   getInitialState: function () {
     return {
+      tab: 'modules',
       size: settings.DEFAULT_SIZE,
       position: settings.DEFAULT_POSITION,
 
       lastModulesUpdatedAt: null,
       modules: [],
+
+      lastThemesUpdatedAt: null,
       themes: []
     };
   },
@@ -47,7 +50,7 @@ var _Widget = React.createClass({
   _getData: function () {
     return {
       modules: this.state.modules,
-      lastModulesUpdatedAt: this.getLastModulesUpdatedAt()
+      lastModulesUpdatedAt: this.getLastUpdatedAt(this.state.lastModulesUpdatedAt)
     };
   },
 
@@ -58,19 +61,44 @@ var _Widget = React.createClass({
     };
   },
 
-  isActualModules: function () {
-      return (
-        moment().unix() - this.getLastModulesUpdatedAt() <
-        settings.CACHE_TIMEOUT
-      );
+  getTabs: function () {
+    var modulesContent = (
+          <Container
+            collection={ this.state.modules }
+            onInstall={ this.handleInstallModule }
+            onRemove={ this.handleRemoveModule }
+          />
+        ),
+        themesContent = (
+          <Container
+            collection={ this.state.themes }
+            onInstall={ this.handleInstallTheme }
+            onRemove={ this.handleRemoveTheme }
+          />
+        );
+
+    return {
+      modules: {
+        navText: 'Modules',
+        content: modulesContent
+      },
+
+      themes: {
+        navText: 'Themes',
+        content: themesContent
+      }
+    };
   },
 
-  getLastModulesUpdatedAt: function () {
-    if (this.state.lastModulesUpdatedAt) {
-      return this.state.lastModulesUpdatedAt;
-    } else {
-      return 0;
-    }
+  isActual: function (field) {
+    return (
+      moment().unix() - this.getLastUpdatedAt(field) <
+      settings.CACHE_TIMEOUT
+    );
+  },
+
+  getLastUpdatedAt: function (value) {
+    return value ? value : 0;
   },
 
   getInstallUrl: function () {
@@ -95,7 +123,7 @@ var _Widget = React.createClass({
       });
 
       if (index !== -1) {
-        var status = lModule[index].status;
+        var status = lModules[index].status;
         sModule.status = status;
       } else {
         sModule.status = UNINSTALLED_STATUS;
@@ -108,13 +136,41 @@ var _Widget = React.createClass({
     }, this.saveData);
   },
 
+  updateThemes: function (data) {
+    var sThemes = _.clone(data),
+        lThemes = _.clone(this.state.themes);
+
+    _.each(sThemes, function (sTheme) {
+      var index = _.findIndex(lThemes, function (lTheme) {
+        return (
+          sTheme.githubUrl === lTheme.githubUrl &&
+          sTheme.name === lTheme.name
+        );
+      });
+
+      if (index !== -1) {
+        var status = lThemes[index].status;
+        sTheme.status = status;
+      } else {
+        sTheme.status = UNINSTALLED_STATUS;
+      }
+    });
+  },
+
   componentWillMount: function () {
     this.init(function () {
-      console.log(this.getData());
-      if (!this.isActualModules) {
+      if (!this.isActual(this.state.lastModulesUpdatedAt)) {
         OS.download(settings.MODULES_REPOSITORY_URL, {
           success: function (text) {
             this.updateModules(JSON.parse(text));
+          }.bind(this)
+        });
+      }
+
+      if (!this.isActual(this.state.lastThemesUpdatedAt)) {
+        OS.download(settings.THEMES_REPOSITORY_URL, {
+          success: function (text) {
+            this.updateThemes(JSON.parse(text));
           }.bind(this)
         });
       }
@@ -132,11 +188,11 @@ var _Widget = React.createClass({
         />
 
         <Widget.Body>
-          <Container
-            collection={ this.state.modules }
-            onInstall={ this.handleInstallModule }
-            onRemove={ this.handleRemoveModule }
-          />
+          { this.getNavHTML() }
+
+          <div>
+            { this.getContentHTML() }
+          </div>
         </Widget.Body>
       </Widget.Widget>
     );
