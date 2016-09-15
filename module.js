@@ -95,8 +95,8 @@ var settings = {
 
   DEFAULT_POSITION: global.Settings.get('default_position'),
 
-  MODULES_REPOSITORY_URL: 'https://rawgit.com/Ermak-13/jsos-store/master/modules.json',
-  THEMES_REPOSITORY_URL: 'https://rawgit.com/Ermak-13/jsos-store/master/themes.json'
+  MODULES_REPOSITORY_URL: 'https://rawgit.com/Ermak-13/jsos-store/prod/modules.json',
+  THEMES_REPOSITORY_URL: 'https://rawgit.com/Ermak-13/jsos-store/prod/themes.json'
 };
 
 module.exports = settings;
